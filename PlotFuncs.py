@@ -4217,9 +4217,14 @@ class DarkPhoton():
         if text_on:
             plt.text(0.6e-14,0.8e-5,r'{\bf SNIPE}',fontsize=fs,color='w',rotation=-42,rotation_mode='anchor',ha='center',va='center',path_effects=line_background(1.5,'k'),clip_on=True)
         return
-
-
-
+    
+    def FaradayLab(ax, col='k', fs=18, text_on=True, lw=1.5):
+        ms = np.logspace(-18, 5, 100)
+        epsilons = 1e-15 / ms
+        plt.plot(ms, epsilons, '--', color=col, lw=lw, zorder=1.5)
+        if text_on:
+            plt.text(1e0, 1e-17, r'{\bf Our work (projection)}', fontsize=fs, color=col, ha='center', va='center')
+        return
 
 #==============================================================================#
 def MySaveFig(fig,pltname,pngsave=True):
