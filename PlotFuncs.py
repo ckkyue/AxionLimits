@@ -4219,11 +4219,12 @@ class DarkPhoton():
         return
     
     def FaradayLab(ax, col='k', fs=18, text_on=True, lw=1.5):
-        ms = np.logspace(-18, 5, 100)
+        ms = np.logspace(-18, 1, 100)
         epsilons = 1e-15 / ms
-        plt.plot(ms, epsilons, '--', color=col, lw=lw, zorder=1.5)
+        ax.plot(ms, epsilons, '--', color=col, lw=lw, zorder=1.5)
+        ax.vlines(x=10, ymin=1e-16, ymax=1, linestyle='--', color=col, lw=lw, zorder=1.5)
         if text_on:
-            plt.text(1e0, 1e-17, r'{\bf Our work (projection)}', fontsize=fs, color=col, ha='center', va='center')
+            ax.text(1e-4, 1e-14, r'{\bf Our work (projection)}', fontsize=fs, color=col, ha='center', va='center')
         return
 
 #==============================================================================#
