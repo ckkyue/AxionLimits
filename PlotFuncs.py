@@ -7,6 +7,9 @@
 
 #==============================================================================#
 
+# Imports
+from astropy.constants import M_sun
+from astropy import units as u
 from numpy import *
 from numpy.random import *
 import matplotlib as mpl
@@ -18,11 +21,34 @@ from matplotlib import colors
 import matplotlib.ticker as mticker
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.cm as cm
+from scipy.constants import alpha, epsilon_0, h, hbar, G, m_e, m_p, physical_constants, year
 from scipy.stats import norm
 import matplotlib.patheffects as pe
 
 pltdir = 'plots/'
 pltdir_png = pltdir+'plots_png/'
+
+# Define the imaginary unit
+j = 1j
+
+# Retrieve physical constants
+c = physical_constants["speed of light in vacuum"][0]
+e_au = physical_constants["atomic unit of charge"][0]
+g_e = physical_constants["electron g factor"][0]
+g_p = physical_constants["proton g factor"][0]
+M_s = M_sun.value
+m_pl = (c * hbar / (8 * pi * G))**(1 / 2) * c**2 / e_au # Reduced Planck mass (eV)
+mu_B = physical_constants["Bohr magneton"][0]
+r_e = physical_constants["Bohr radius"][0]
+
+# Conversion factors
+CNu = (4 * pi * alpha)**(1 / 2) / e_au
+kg_to_eV = c**2 / e_au
+m_to_eVminus1 = e_au / hbar / c
+J_to_eV = 1 / e_au
+pc_to_m = u.pc.to(u.m)
+s_to_eVminus1 = e_au / hbar
+T_to_eV2 = kg_to_eV / CNu / s_to_eVminus1
 
 #==============================================================================#
 def col_alpha(col,alpha=0.1):
@@ -31,6 +57,10 @@ def col_alpha(col,alpha=0.1):
     return [alpha * c1 + (1 - alpha) * c2
             for (c1, c2) in zip(rgb, bg_rgb)]
 #==============================================================================#
+
+# Calculating epsilon for Faraday rotation in lab
+def FaradayLabEpsilon(m, delta_theta, lx, ly, V, rho, phi_0):
+    return abs(delta_theta / (16 * sqrt(2) * lx**3 * ly * m * V * sqrt(rho) * (cos(phi_0) + cos(m * lx + phi_0)) / ((lx**2 + ly**2) * pi**2 * (pi**2 - lx**2 * m**2))))
 
 
 def PlotBound(ax,filename,edgecolor='k',facecolor='crimson',alpha=1,lw=1.5,y2=1e10,zorder=0.1,
@@ -59,8 +89,6 @@ def PlotBound(ax,filename,edgecolor='k',facecolor='crimson',alpha=1,lw=1.5,y2=1e
 
 def line_background(lw,col):
     return [pe.Stroke(linewidth=lw, foreground=col), pe.Normal()]
-
-
 
 def FilledLimit(ax,dat,text_label='',col='ForestGreen',edgecolor='k',zorder=1,linestyle='-',\
                     lw=2,y2=1e0,edgealpha=0.6,text_on=False,text_pos=[0,0],\
@@ -4217,14 +4245,20 @@ class DarkPhoton():
         if text_on:
             plt.text(0.6e-14,0.8e-5,r'{\bf SNIPE}',fontsize=fs,color='w',rotation=-42,rotation_mode='anchor',ha='center',va='center',path_effects=line_background(1.5,'k'),clip_on=True)
         return
-    
+
     def FaradayLab(ax, col='k', fs=18, text_on=True, lw=1.5):
-        ms = np.logspace(-18, 1, 100)
-        epsilons = 1e-15 / ms
-        ax.plot(ms, epsilons, '--', color=col, lw=lw, zorder=1.5)
-        ax.vlines(x=10, ymin=1e-16, ymax=1, linestyle='--', color=col, lw=lw, zorder=1.5)
+        delta_theta = 1e-12
+        phi_0 = 0
+        rho = 0.45 * 1e9 / (1e-2 * m_to_eVminus1)**3
+        lx = 1 * m_to_eVminus1
+        ly = 1 * m_to_eVminus1
+        V = -131 * T_to_eV2**(-1) * m_to_eVminus1**(-1)
+        ms = logspace(-18, 1, 1000)
+        epsilons = FaradayLabEpsilon(ms, delta_theta, lx, ly, V, rho, phi_0)
+        ax.plot(ms, epsilons, '--', color=col, lw=lw, zorder=2, label='Our work (projection)')
+        ax.vlines(x=10, ymin=FaradayLabEpsilon(10, delta_theta, lx, ly, V, rho, phi_0), ymax=1, linestyle='--', color=col, lw=lw, zorder=2)
         if text_on:
-            ax.text(1e-4, 1e-14, r'{\bf Our work (projection)}', fontsize=fs, color=col, ha='center', va='center')
+            ax.legend(fontsize=fs)
         return
 
 #==============================================================================#
